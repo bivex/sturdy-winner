@@ -1,82 +1,114 @@
 # Libreactor - Extreme HTTP Performance Server
 
-Оптимизированный HTTP сервер на базе libreactor с экстремальной производительностью.
+Optimized HTTP server based on libreactor with extreme performance.
 
-## 🚀 Быстрый старт
+## 🚀 Quick Start
 
 ```bash
-# Скомпилировать с оптимизациями
+# Compile with optimizations
 ./compile.sh
 
-# Запустить сервер
+# Start the server
 ./run-optimized.sh
 
-# Проверить статус
+# Check status
 ./status.sh
 
-# Остановить сервер
+# Stop the server
 ./stop.sh
 ```
 
-## 📊 Бенчмаркинг
+## 📊 Benchmarking
 
 ```bash
-# Быстрый тест
+# Quick test
 wrk -t8 -c512 -d10s http://localhost:2342/plaintext
 
-# Полный бенчмарк
+# Full benchmark
 /var/www/benchmark-libreactor.sh
 ```
 
-## ⚡ Оптимизации производительности
+## ⚡ Performance Optimizations
 
-### Код уровня приложения
-- **SO_REUSEPORT + BPF фильтр** - распределение соединений по CPU
-- **Busy Poll (SO_BUSY_POLL)** - низкая latency для сетевых операций
-- **TCP_NODELAY** - отключение Nagle алгоритма
-- **SO_KEEPALIVE = 0** - отключение keepalive для производительности
-- **Мультипроцессная архитектура** - процесс на CPU с CPU pinning
+### Application Level Code
+- **SO_REUSEPORT + BPF filter** - connection distribution across CPUs
+- **Busy Poll (SO_BUSY_POLL)** - low latency for network operations
+- **TCP_NODELAY** - disabling Nagle algorithm
+- **SO_KEEPALIVE = 0** - disabling keepalive for performance
+- **Multi-process architecture** - process per CPU with CPU pinning
 
-### Компиляция
-- `-O3 -march=native -flto` - максимальные оптимизации
-- `-DNDEBUG -fomit-frame-pointer -funroll-loops` - дополнительные оптимизации
+### Compilation
+- `-O3 -march=native -flto` - maximum optimizations
+- `-DNDEBUG -fomit-frame-pointer -funroll-loops` - additional optimizations
 
-### Системный уровень
-- **Параметры ядра**: `nospectre_v1 nospectre_v2 pti=off mds=off tsx_async_abort=off`
-- **Сетевые sysctl**: 16MB буферы, busy poll, TCP оптимизации
-- **Nftables** вместо iptables (минимальный overhead)
+### System Level
+- **Kernel parameters**: `nospectre_v1 nospectre_v2 pti=off mds=off tsx_async_abort=off`
+- **Network sysctl**: 16MB buffers, busy poll, TCP optimizations
+- **Nftables** instead of iptables (minimal overhead)
 
-## 📁 Структура проекта
+## 📁 Project Structure
 
 ```
 /var/www/rads/
-├── libreactor-server          # Оптимизированный бинарь
-├── compile.sh                 # Компиляция с оптимизациями
-├── run-optimized.sh          # Запуск с CPU pinning
-├── stop.sh                   # Остановка и очистка
-├── status.sh                 # Проверка статуса
-├── benchmark_config.json      # Конфиг бенчмаркинга
-├── src/                       # Исходный код
-│   ├── libreactor-server.c   # Основной сервер
-│   ├── helpers.c             # Вспомогательные функции
-│   └── helpers.h
-└── README.md
+├── build/                     # Build directory (generated during compilation)
+├── src/                       # Source code
+│   ├── domain/                # HTTP domain logic
+│   │   ├── http_response.c
+│   │   └── http_server.c
+│   ├── include/               # Header files
+│   │   ├── compat/           # Compatibility headers
+│   │   │   ├── dynamic.h
+│   │   │   └── reactor.h
+│   │   ├── domain/           # Domain headers
+│   │   │   ├── http_response.h
+│   │   │   └── http_server.h
+│   │   ├── infrastructure/   # Infrastructure headers
+│   │   │   └── server_infrastructure.h
+│   │   └── platform/         # Platform headers
+│   │       ├── log.h
+│   │       ├── process.h
+│   │       ├── signals.h
+│   │       ├── socket.h
+│   │       └── system.h
+│   ├── infrastructure/        # Server infrastructure
+│   │   └── server_infrastructure.c
+│   ├── main/                  # Main application files
+│   │   ├── libreactor-server.c
+│   │   └── libreactor.c
+│   └── platform/              # Platform utilities
+│       ├── log.c
+│       ├── process.c
+│       ├── signals.c
+│       ├── socket.c
+│       └── system.c
+├── compile.sh                 # Compilation with optimizations
+├── run-optimized.sh          # Start with CPU pinning
+├── stop.sh                   # Stop and cleanup
+├── status.sh                 # Check status
+├── Makefile                  # Alternative makefile
+├── drop_changes.sh           # Git changes reset
+├── fast_commits.sh           # Fast commits
+├── switch_branch.sh          # Branch switching
+├── git-init.sh               # Git repo initialization
+├── libreactor-server.dockerfile # Dockerfile for server
+├── libreactor.dockerfile     # Dockerfile for libreactor
+└── README.md                 # This file
 ```
 
-## 🎯 Производительность
+## 🎯 Performance
 
-- **65k-80k req/sec** на plaintext (3 CPU, виртуализация)
-- **78k+ req/sec** на JSON responses
-- **CPU тратится на sendto()** (полезная работа)
-- **Минимальные блокировки и контекст-свитчи**
+- **44k+ req/sec** on plaintext (3 CPUs, KVM virtualization, local test)
+- **41k+ req/sec** on JSON responses (3 CPUs, KVM virtualization)
+- **CPU spent on sendto()** (useful work)
+- **Minimal locks and context switches**
 
 ## 🔧 API
 
 ### Endpoints
-- `GET /plaintext` - возвращает "Hello, World!"
-- `GET /json` - возвращает `{"message":"Hello, World!"}`
+- `GET /plaintext` - returns "Hello, World!"
+- `GET /json` - returns `{"message":"Hello, World!"}`
 
-### Пример запроса
+### Example Request
 ```bash
 curl http://localhost:2342/plaintext
 # Hello, World!
@@ -85,33 +117,33 @@ curl http://localhost:2342/json
 # {"message":"Hello, World!"}
 ```
 
-## 🛠️ Разработка
+## 🛠️ Development
 
-### Перекомпиляция
+### Recompilation
 ```bash
 make clean
 make CFLAGS="-O3 -march=native -flto -DNDEBUG" libreactor-server
 ```
 
-### Отладочная сборка
+### Debug Build
 ```bash
 make CFLAGS="-O0 -g" libreactor-server
 ```
 
-## 📈 Мониторинг
+## 📈 Monitoring
 
-### CPU профилирование
+### CPU Profiling
 ```bash
 perf record -F 99 -g -p $(pgrep libreactor-server | head -1) -o perf.data -- sleep 10
 perf report -i perf.data
 ```
 
-### Системные вызовы
+### System Calls
 ```bash
 bpftrace -e 'tracepoint:syscalls:sys_enter_sendto { @[comm] = count(); } interval:s:1 { print(@); clear(@); }'
 ```
 
-## 🔗 Ссылки
+## 🔗 Links
 
 - [Libreactor](https://github.com/fredrikwidlund/libreactor)
 - [Extreme HTTP Performance Tuning](https://talawah.io/blog/extreme-http-performance-tuning-one-point-two-million/)
